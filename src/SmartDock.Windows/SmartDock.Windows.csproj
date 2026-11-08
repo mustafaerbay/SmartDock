@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>SmartDock.Windows</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- UseWPF removes System.IO from the implicit usings. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SmartDock.Core\SmartDock.Core.csproj" />
+  </ItemGroup>
+</Project>

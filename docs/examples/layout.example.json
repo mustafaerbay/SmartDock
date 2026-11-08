@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "pinnedApps": [
+    { "id": "explorer", "displayName": "File Explorer", "path": "C:\\Windows\\explorer.exe", "arguments": null },
+    { "id": "settings", "displayName": "Settings", "path": "ms-settings:", "arguments": null }
+  ],
+  "centerWidgets": [
+    { "instanceId": "media-default", "typeId": "media", "width": null, "settings": {} },
+    { "instanceId": "cpu-default", "typeId": "cpu", "width": null, "settings": { "refreshSeconds": 2, "showGraph": true } },
+    { "instanceId": "memory-default", "typeId": "memory", "width": null, "settings": {} },
+    { "instanceId": "pomodoro-1a2b3c4d", "typeId": "pomodoro", "width": null, "settings": { "focusMinutes": 50, "breakMinutes": 10 } }
+  ],
+  "rightWidgets": [
+    { "instanceId": "network-default", "typeId": "network", "width": null, "settings": {} },
+    { "instanceId": "battery-default", "typeId": "battery", "width": null, "settings": {} },
+    { "instanceId": "clock-default", "typeId": "clock", "width": null, "settings": { "use24Hour": true, "showSeconds": false } }
+  ]
+}

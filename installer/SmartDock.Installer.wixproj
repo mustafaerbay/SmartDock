@@ -1,0 +1,61 @@
+<!--
+  SmartDock MSI installer (WiX Toolset v5, built with plain `dotnet build` / Rider — no WiX install needed;
+  the WiX SDK comes from NuGet).
+
+  Build:  Rider: switch the solution configuration to "Installer" and Build, or right-click this project › Build.
+          CLI:   dotnet build installer/SmartDock.Installer.wixproj -c Release
+  Output: artifacts/installer/SmartDock-Setup-v<version>-x64.msi
+
+  Before compiling the MSI this project publishes SmartDock.App with the SingleFile-win-x64 profile,
+  so the MSI always contains a fresh single-file SmartDock.exe of the same version.
+  Pass -p:SkipAppPublish=true to package an already-published exe instead.
+-->
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputName>SmartDock-Setup-v$(Version)-x64</OutputName>
+    <OutputPath>$(MSBuildThisFileDirectory)..\artifacts\installer\</OutputPath>
+    <AppProject>$(MSBuildThisFileDirectory)..\src\SmartDock.App\SmartDock.App.csproj</AppProject>
+    <AppPublishDir>$(MSBuildThisFileDirectory)..\artifacts\publish\single-file-win-x64\</AppPublishDir>
+    <DefineConstants>ProductVersion=$(Version);AppPublishDir=$(AppPublishDir);RepoRoot=$(MSBuildThisFileDirectory)..\</DefineConstants>
+    <!-- Root Directory.Build.props sets C# options; they don't apply to WiX. -->
+    <Nullable></Nullable>
+    <ImplicitUsings></ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <!--
+    Publish the app in a separate `dotnet publish` process: it must not inherit this project's global
+    properties (Platform=x64, solution settings) and must not share MSBuild nodes with a solution build
+    that compiles the same projects at the same time (that caused MC3066 "cannot find ClockWidget").
+  -->
+  <Target Name="PublishSmartDockApp" BeforeTargets="BeforeBuild;CoreBuild" Condition="'$(SkipAppPublish)' != 'true'">
+    <Message Importance="high" Text="Publishing SmartDock v$(Version) (SingleFile-win-x64) for the installer..." />
+    <!-- The child process inherits the environment as-is (blanking MSBuild variables breaks SDK resolution). -->
+    <Exec Command="dotnet publish &quot;$(AppProject)&quot; -c Release -p:PublishProfile=SingleFile-win-x64 -nologo -nodeReuse:false"
+          WorkingDirectory="$(MSBuildThisFileDirectory).." />
+  </Target>
+
+  <Target Name="CheckSmartDockPublished" BeforeTargets="BeforeBuild;CoreBuild" AfterTargets="PublishSmartDockApp">
+    <Error Condition="!Exists('$(AppPublishDir)SmartDock.exe')"
+           Text="$(AppPublishDir)SmartDock.exe not found. Publish SmartDock.App with the SingleFile-win-x64 profile first (or build without SkipAppPublish)." />
+  </Target>
+  <!--
+    Update manifest for in-app updates, written next to the MSI on every build (also from Rider).
+    build/installer.ps1 rewrites it with release notes taken from CHANGELOG.md.
+  -->
+  <Target Name="WriteUpdateManifest" AfterTargets="Build" Condition="Exists('$(TargetPath)')">
+    <GetFileHash Files="$(TargetPath)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="MsiSha256" />
+    </GetFileHash>
+    <PropertyGroup>
+      <UpdateManifestJson>{ &quot;version&quot;: &quot;$(Version)&quot;, &quot;msi&quot;: &quot;$(TargetFileName)&quot;, &quot;sha256&quot;: &quot;$(MsiSha256)&quot;, &quot;notes&quot;: &quot;&quot; }</UpdateManifestJson>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(TargetDir)latest.json" Lines="$(UpdateManifestJson)" Overwrite="true" />
+    <Message Importance="high" Text="Update manifest: $(TargetDir)latest.json (SHA-256 $(MsiSha256))" />
+  </Target>
+</Project>

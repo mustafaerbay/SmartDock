@@ -1,0 +1,31 @@
+<!-- Design-time/fallback values. ThemeService replaces this dictionary at runtime with identical keys. -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <Color x:Key="AccentColor">#7C5CFF</Color>
+    <SolidColorBrush x:Key="DockBackgroundBrush" Color="#EB0B0D14" />
+    <SolidColorBrush x:Key="DockBorderBrush" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="#FF161A26" />
+    <SolidColorBrush x:Key="WidgetHoverBrush" Color="#FF20263A" />
+    <SolidColorBrush x:Key="WidgetBorderBrush" Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFEDEFF7" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FF8A90A6" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#FF7C5CFF" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#337C5CFF" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#FF4DD6AD" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FFFFC44D" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#FFFF5C7A" />
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#F7131622" />
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FF10131C" />
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#FF1A1F2E" />
+    <SolidColorBrush x:Key="DividerBrush" Color="#1FFFFFFF" />
+    <CornerRadius x:Key="DockCornerRadius">12</CornerRadius>
+    <CornerRadius x:Key="WidgetCornerRadius">9</CornerRadius>
+    <Thickness x:Key="DockPadding">8,6,8,6</Thickness>
+    <Thickness x:Key="WidgetMargin">2.5,0,2.5,0</Thickness>
+    <sys:Double x:Key="WidgetHeight">40</sys:Double>
+    <sys:Double x:Key="DockHeight">52</sys:Double>
+    <sys:Double x:Key="AppIconSize">26</sys:Double>
+    <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+</ResourceDictionary>

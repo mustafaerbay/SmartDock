@@ -1,0 +1,846 @@
+<!--
+  Popup content per widget type. WidgetCard looks up "<WidgetTypeName>.Popup" when the card is clicked.
+  Popups support mouse interaction only (the dock never takes keyboard focus); text input lives in
+  the Configure dialog or app windows.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="clr-namespace:SmartDock.App.Controls"
+                    xmlns:web="clr-namespace:SmartDock.Widgets.Web;assembly=SmartDock.Widgets"
+                    xmlns:k8s="clr-namespace:SmartDock.Widgets.Cluster;assembly=SmartDock.Widgets"
+                    xmlns:prod="clr-namespace:SmartDock.Widgets.Productivity;assembly=SmartDock.Widgets"
+                    xmlns:repo="clr-namespace:SmartDock.Widgets.CodeRepo;assembly=SmartDock.Widgets"
+                    xmlns:bm="clr-namespace:SmartDock.Widgets.Bookmarks;assembly=SmartDock.Widgets">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Controls.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Calendar agenda -->
+    <DataTemplate x:Key="CalendarWidget.Popup">
+        <StackPanel Width="330">
+            <TextBlock Text="Upcoming" Style="{StaticResource PopupTitle}" />
+            <TextBlock Text="Nothing scheduled for today or tomorrow." Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,0,0,4"
+                       Visibility="{Binding Agenda.Count, Converter={StaticResource ZeroToVisible}}" />
+            <ItemsControl ItemsSource="{Binding Agenda}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Row" CornerRadius="8" Padding="8,6" Margin="0,1">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding JoinCommand}" Padding="10,2" Margin="8,0,0,0" VerticalAlignment="Center"
+                                        Style="{StaticResource DockIconButton}" Width="Auto" ToolTip="Join"
+                                        Visibility="{Binding HasJoin, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="Join" FontFamily="{DynamicResource UiFont}" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentBrush}" Margin="8,0" />
+                                </Button>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding TimeText}" Style="{StaticResource SecondaryText}" Width="96" FontSize="11.5" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12.5" />
+                                    <TextBlock Text="{Binding Location}" Style="{StaticResource SecondaryText}"
+                                               Visibility="{Binding Location, Converter={StaticResource NullToCollapsed}}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsNow}" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Weather forecast -->
+    <DataTemplate x:Key="WeatherWidget.Popup">
+        <StackPanel Width="300">
+            <TextBlock Text="{Binding LocationText}" Style="{StaticResource PopupTitle}" />
+            <StackPanel Orientation="Horizontal" Margin="2,0,0,12">
+                <TextBlock Style="{StaticResource IconText}" Text="{Binding Glyph}" FontSize="34" Foreground="{DynamicResource WarningBrush}" />
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TemperatureText}" Style="{StaticResource PrimaryText}" FontSize="26" />
+                    <TextBlock Text="{Binding ConditionText}" Style="{StaticResource SecondaryText}" FontSize="12" />
+                </StackPanel>
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Forecast}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="1" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel HorizontalAlignment="Center" ToolTip="{Binding Text}">
+                            <TextBlock Text="{Binding Day}" Style="{StaticResource SecondaryText}" HorizontalAlignment="Center" />
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconText}" FontSize="18" Margin="0,4" />
+                            <TextBlock Text="{Binding Range}" Style="{StaticResource PrimaryText}" FontSize="11" FontWeight="Normal" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource SecondaryText}" FontSize="10.5" Margin="2,12,0,0" />
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="10.5" TextWrapping="Wrap" TextTrimming="None" Margin="2,2,0,0"
+                       Foreground="{DynamicResource WarningBrush}" Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Shared review list for code widgets (CodeHub / GitLab, GitHub): DataContext = MergeRequestBoard. -->
+    <DataTemplate x:Key="CodeBoard.View">
+        <StackPanel>
+            <DockPanel Margin="0,0,0,6">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding ToggleGroupingCommand}"
+                        ToolTip="Switch between grouping by project and by category">
+                    <TextBlock Text="{Binding GroupingButtonText}" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource DockIconButton}" Width="26" Content="&#xE721;" FontSize="12"
+                            Command="{Binding SearchCommand}" ToolTip="Search (all code widgets)" />
+                    <Button Style="{StaticResource DockIconButton}" Width="26" Content="&#xE70D;" FontSize="11"
+                            Command="{Binding ExpandAllCommand}" ToolTip="Expand all" />
+                    <Button Style="{StaticResource DockIconButton}" Width="26" Content="&#xE70E;" FontSize="11"
+                            Command="{Binding CollapseAllCommand}" ToolTip="Collapse all" />
+                </StackPanel>
+            </DockPanel>
+            <TextBlock Text="{Binding EmptyText}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,0,0,4"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+                <!-- Quick filters (clicks only: the dock can't take keyboard input; typing happens in the search window). -->
+                <WrapPanel Margin="0,0,0,4" Visibility="{Binding FilterChips.Count, Converter={StaticResource ZeroToVisible}, ConverterParameter=invert}">
+                    <ItemsControl ItemsSource="{Binding FilterChips}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding SelectCommand}" Cursor="Hand" Focusable="False" Margin="0,0,4,4">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Chip" CornerRadius="10" Padding="9,2" Background="{DynamicResource ControlBackgroundBrush}">
+                                                <TextBlock x:Name="ChipText" Text="{Binding Text}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource WidgetHoverBrush}" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                                    <Setter TargetName="Chip" Property="Opacity" Value="0.5" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                                    <Setter TargetName="ChipText" Property="Foreground" Value="White" />
+                                                    <Setter TargetName="Chip" Property="Opacity" Value="1" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Command="{Binding ToggleDraftsCommand}" Cursor="Hand" Focusable="False" Margin="0,0,4,4" ToolTip="Show or hide draft merge requests">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Chip" CornerRadius="10" Padding="9,2" BorderThickness="1" BorderBrush="{DynamicResource WidgetBorderBrush}" Background="Transparent">
+                                    <TextBlock x:Name="ChipText" Text="{Binding DraftsChipText}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Chip" Property="Background" Value="{DynamicResource WidgetHoverBrush}" />
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding HideDrafts}" Value="True">
+                                        <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                        <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </WrapPanel>
+                <DockPanel Margin="2,0,0,4" Visibility="{Binding FilterSummary, Converter={StaticResource NullToCollapsed}}">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource PopupItemButton}" Command="{Binding ClearFilterCommand}" Padding="0">
+                        <TextBlock Text="Clear filter" FontSize="11" Foreground="{DynamicResource AccentBrush}" />
+                    </Button>
+                    <TextBlock Text="{Binding FilterSummary}" Style="{StaticResource SecondaryText}" FontSize="11" VerticalAlignment="Center" />
+                </DockPanel>
+                <ScrollViewer MaxHeight="460" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Groups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,2,0,2">
+                                        <!-- Group header: click to expand/collapse. -->
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource PopupItemButton}" Command="{Binding Pipeline.OpenCommand}"
+                                                    Visibility="{Binding HasPipeline, Converter={StaticResource BoolToVisibility}}"
+                                                    ToolTip="Latest pipeline - open in the browser">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse x:Name="PipeDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center" Fill="{DynamicResource TextSecondaryBrush}" />
+                                                    <TextBlock Text="{Binding Pipeline.Info.Status}" Style="{StaticResource SecondaryText}" FontSize="10.5" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding ToggleCommand}" ToolTip="Show / hide">
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Left" Text="{Binding Chevron}" FontFamily="{DynamicResource IconFont}" FontSize="10"
+                                                               Width="16" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    <Border x:Name="CountBadge" DockPanel.Dock="Right" CornerRadius="8" MinWidth="20" Padding="6,0" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                            Background="{DynamicResource ControlBackgroundBrush}">
+                                                        <TextBlock x:Name="CountText" Text="{Binding Count}" FontSize="10.5" HorizontalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </Border>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12.5" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource SecondaryText}" FontSize="10.5" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Button>
+                                        </DockPanel>
+                                        <!-- Group body. -->
+                                        <StackPanel Margin="14,0,0,4" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
+                                            <ItemsControl ItemsSource="{Binding VisibleItems}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Style="{StaticResource PopupItemButton}" Command="{Binding OpenCommand}"
+                                                                ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="60000" ToolTipService.BetweenShowDelay="150">
+                                                            <!-- Hover quick view: everything comes from the MR list response, no extra requests. -->
+                                                            <Button.ToolTip>
+                                                                <ToolTip Background="{DynamicResource PopupBackgroundBrush}" BorderBrush="{DynamicResource WidgetBorderBrush}"
+                                                                         BorderThickness="1" Padding="12,10" MaxWidth="440" Placement="Left" HorizontalOffset="-6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding FullTitle}" Style="{StaticResource PrimaryText}" FontSize="13" FontWeight="SemiBold"
+                                                                                   TextWrapping="Wrap" TextTrimming="None" />
+                                                                        <TextBlock Text="{Binding Reference}" Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,2,0,8" />
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <Grid.RowDefinitions>
+                                                                                <RowDefinition Height="Auto" />
+                                                                                <RowDefinition Height="Auto" />
+                                                                                <RowDefinition Height="Auto" />
+                                                                                <RowDefinition Height="Auto" />
+                                                                                <RowDefinition Height="Auto" />
+                                                                            </Grid.RowDefinitions>
+                                                                            <TextBlock Grid.Row="0" Text="Author" Style="{StaticResource SecondaryText}" FontSize="11" Width="78" VerticalAlignment="Top" Margin="0,1,8,1" />
+                                                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AuthorText}" Style="{StaticResource PrimaryText}" FontSize="11.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,1,0,1" />
+                                                                            <TextBlock Grid.Row="1" Visibility="{Binding BranchesText, Converter={StaticResource NullToCollapsed}}" Text="Branches" Style="{StaticResource SecondaryText}" FontSize="11" Width="78" VerticalAlignment="Top" Margin="0,1,8,1" />
+                                                                            <TextBlock Grid.Row="1" Grid.Column="1" Visibility="{Binding BranchesText, Converter={StaticResource NullToCollapsed}}" Text="{Binding BranchesText}" Style="{StaticResource PrimaryText}" FontSize="11.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,1,0,1" />
+                                                                            <TextBlock Grid.Row="2" Visibility="{Binding ReviewersText, Converter={StaticResource NullToCollapsed}}" Text="Reviewers" Style="{StaticResource SecondaryText}" FontSize="11" Width="78" VerticalAlignment="Top" Margin="0,1,8,1" />
+                                                                            <TextBlock Grid.Row="2" Grid.Column="1" Visibility="{Binding ReviewersText, Converter={StaticResource NullToCollapsed}}" Text="{Binding ReviewersText}" Style="{StaticResource PrimaryText}" FontSize="11.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,1,0,1" />
+                                                                            <TextBlock Grid.Row="3" Text="Assignees" Style="{StaticResource SecondaryText}" FontSize="11" Width="78" VerticalAlignment="Top" Margin="0,1,8,1" />
+                                                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AssigneesText}" Style="{StaticResource PrimaryText}" FontSize="11.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,1,0,1" />
+                                                                            <TextBlock Grid.Row="4" Visibility="{Binding MergeStatusText, Converter={StaticResource NullToCollapsed}}" Text="Status" Style="{StaticResource SecondaryText}" FontSize="11" Width="78" VerticalAlignment="Top" Margin="0,1,8,1" />
+                                                                            <TextBlock Grid.Row="4" Grid.Column="1" Visibility="{Binding MergeStatusText, Converter={StaticResource NullToCollapsed}}" Text="{Binding MergeStatusText}" Style="{StaticResource PrimaryText}" FontSize="11.5" TextWrapping="Wrap" TextTrimming="None" Margin="0,1,0,1" />
+                                                                        </Grid>
+                                                                        <TextBlock Text="{Binding LabelsText}" Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,6,0,0"
+                                                                                   TextWrapping="Wrap" TextTrimming="None" Foreground="{DynamicResource AccentBrush}"
+                                                                                   Visibility="{Binding LabelsText, Converter={StaticResource NullToCollapsed}}" />
+                                                                        <TextBlock Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,4,0,0"
+                                                                                   Visibility="{Binding Milestone, Converter={StaticResource NullToCollapsed}}">
+                                                                            <Run Text="Milestone: " /><Run Text="{Binding Milestone, Mode=OneWay}" />
+                                                                        </TextBlock>
+                                                                        <TextBlock Text="{Binding ActivityText}" Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,4,0,0"
+                                                                                   Visibility="{Binding ActivityText, Converter={StaticResource NullToCollapsed}}" />
+                                                                        <TextBlock Text="{Binding DatesText}" Style="{StaticResource SecondaryText}" FontSize="11" Margin="0,4,0,0"
+                                                                                   TextWrapping="Wrap" TextTrimming="None" />
+                                                                        <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,8,0,6"
+                                                                                Visibility="{Binding DescriptionPreview, Converter={StaticResource NullToCollapsed}}" />
+                                                                        <TextBlock Text="{Binding DescriptionPreview}" Style="{StaticResource PrimaryText}" FontSize="11.5"
+                                                                                   TextWrapping="Wrap" TextTrimming="None" Opacity="0.9"
+                                                                                   Visibility="{Binding DescriptionPreview, Converter={StaticResource NullToCollapsed}}" />
+                                                                        <TextBlock Text="Click to open in the browser" Style="{StaticResource SecondaryText}" FontSize="10.5"
+                                                                                   FontStyle="Italic" Margin="0,8,0,0" />
+                                                                    </StackPanel>
+                                                                </ToolTip>
+                                                            </Button.ToolTip>
+                                                            <DockPanel>
+                                                                <StackPanel DockPanel.Dock="Right" Margin="8,1,0,0" VerticalAlignment="Top">
+                                                                    <TextBlock x:Name="AgeText" Text="{Binding Age}" FontSize="10.5" HorizontalAlignment="Right"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                                               Visibility="{Binding HasAge, Converter={StaticResource BoolToVisibility}}" />
+                                                                    <Border x:Name="Tag" CornerRadius="6" Padding="6,1" Margin="0,2,0,0" HorizontalAlignment="Right"
+                                                                            Background="{DynamicResource ControlBackgroundBrush}"
+                                                                            Visibility="{Binding RoleLabel, Converter={StaticResource NullToCollapsed}}">
+                                                                        <TextBlock x:Name="TagText" Text="{Binding RoleLabel}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12" />
+                                                                    <TextBlock x:Name="Sub" Text="{Binding Detail}" Style="{StaticResource SecondaryText}" />
+                                                                </StackPanel>
+                                                            </DockPanel>
+                                                        </Button>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+                                                                <Setter TargetName="Sub" Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsStale}" Value="True">
+                                                                <Setter TargetName="AgeText" Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsReview}" Value="True">
+                                                                <Setter TargetName="Tag" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                                <Setter TargetName="TagText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding ShowAllCommand}"
+                                                    Visibility="{Binding HasMore, Converter={StaticResource BoolToVisibility}}">
+                                                <TextBlock Text="{Binding MoreText}" FontSize="11" Foreground="{DynamicResource AccentBrush}" />
+                                            </Button>
+                                        </StackPanel>
+                                        <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="8,2,8,0" Opacity="0.6" />
+                                    </StackPanel>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding NeedsAttention}" Value="True">
+                                            <Setter TargetName="CountBadge" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                            <Setter TargetName="CountText" Property="Foreground" Value="White" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Pipeline.Succeeded}" Value="True">
+                                            <Setter TargetName="PipeDot" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Pipeline.Running}" Value="True">
+                                            <Setter TargetName="PipeDot" Property="Fill" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Pipeline.Failed}" Value="True">
+                                            <Setter TargetName="PipeDot" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Visibility="{Binding ShowPipelineList, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="PIPELINES" Style="{StaticResource SecondaryText}" FontSize="10" Margin="2,8,0,2"
+                                   Visibility="{Binding Pipelines.Count, Converter={StaticResource ZeroToVisible}, ConverterParameter=invert}" />
+                        <ItemsControl ItemsSource="{Binding Pipelines}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource PopupItemButton}" Command="{Binding OpenCommand}">
+                                        <DockPanel>
+                                            <Ellipse x:Name="Dot" DockPanel.Dock="Left" Width="9" Height="9" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                     Fill="{DynamicResource TextSecondaryBrush}" />
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource SecondaryText}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Button>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Succeeded}" Value="True">
+                                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Running}" Value="True">
+                                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Failed}" Value="True">
+                                            <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- GitHub: pull requests use the shared code board; assigned issues listed below. -->
+    <DataTemplate x:Key="GitHubWidget.Popup">
+        <StackPanel Width="420">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding RefreshNowCommand}">
+                    <TextBlock Text="Refresh" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource PopupTitle}" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <TextBlock Text="{Binding RepoText}" Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,0,0,6"
+                       Visibility="{Binding RepoText, Converter={StaticResource NullToCollapsed}}" />
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,6"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+            <ContentControl Content="{Binding Board}" ContentTemplate="{StaticResource CodeBoard.View}" Focusable="False" />
+            <TextBlock Text="ASSIGNED ISSUES" Style="{StaticResource SecondaryText}" FontSize="10" Margin="2,10,0,2"
+                       Visibility="{Binding Items.Count, Converter={StaticResource ZeroToVisible}, ConverterParameter=invert}" />
+            <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding OpenCommand}" ToolTip="Open in the browser">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12" FontWeight="Normal" />
+                                    <TextBlock Text="{Binding Repository}" Style="{StaticResource SecondaryText}" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding Note}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Foreground="{DynamicResource WarningBrush}" Visibility="{Binding Note, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Web page status -->
+    <DataTemplate x:Key="WebStatusWidget.Popup">
+        <StackPanel Width="360">
+            <DockPanel Margin="0,0,0,4">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding CheckNowCommand}" ToolTip="Check all pages now">
+                    <TextBlock Text="Check now" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="Web pages" Style="{StaticResource PopupTitle}" />
+            </DockPanel>
+            <TextBlock Text="No pages yet – right-click the widget › Configure… to add some." Style="{StaticResource SecondaryText}" FontSize="12"
+                       TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,4"
+                       Visibility="{Binding Sites.Count, Converter={StaticResource ZeroToVisible}}" />
+            <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Sites}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding OpenCommand}" ToolTip="{Binding Definition.Url}">
+                                <DockPanel>
+                                    <Ellipse x:Name="Dot" DockPanel.Dock="Left" Width="9" Height="9" Margin="0,4,10,0" VerticalAlignment="Top"
+                                             Fill="{DynamicResource TextSecondaryBrush}" />
+                                    <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding Uptime}" Style="{StaticResource SecondaryText}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding LastChecked}" Style="{StaticResource SecondaryText}" FontSize="10" HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource PrimaryText}" FontSize="12" />
+                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource SecondaryText}" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Health}" Value="{x:Static web:SiteHealth.Up}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Health}" Value="{x:Static web:SiteHealth.Slow}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource WarningBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Health}" Value="{x:Static web:SiteHealth.Down}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Kubernetes cluster -->
+    <DataTemplate x:Key="KubernetesWidget.Popup">
+        <StackPanel Width="380">
+            <DockPanel Margin="0,0,0,2">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding RefreshNowCommand}" ToolTip="Check the cluster now">
+                    <TextBlock Text="Refresh" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding ExploreCommand}"
+                        ToolTip="Browse pods and deployments, follow live logs">
+                    <TextBlock Text="Pods &amp; logs" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource PopupTitle}" />
+            </DockPanel>
+            <TextBlock Style="{StaticResource SecondaryText}" FontSize="11" Margin="2,0,0,8">
+                <Run Text="{Binding Server, Mode=OneWay}" /> <Run Text="·" /> <Run Text="{Binding Summary, Mode=OneWay}" />
+            </TextBlock>
+
+            <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Problems -->
+                    <TextBlock Text="PROBLEMS" Style="{StaticResource SecondaryText}" FontSize="10" Margin="2,0,0,4" />
+                    <TextBlock Text="Nothing needs attention." Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,0,0,6"
+                               Visibility="{Binding Issues.Count, Converter={StaticResource ZeroToVisible}}" />
+                    <ItemsControl ItemsSource="{Binding Issues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource PopupItemButton}" Command="{Binding CopyDescribeCommand}"
+                                        ToolTip="Click: copy a kubectl describe command">
+                                    <DockPanel>
+                                        <Border x:Name="Badge" DockPanel.Dock="Left" CornerRadius="4" Padding="5,1" Margin="0,1,8,0" VerticalAlignment="Top"
+                                                Background="{DynamicResource WarningBrush}">
+                                            <TextBlock Text="{Binding Reason}" FontFamily="{DynamicResource UiFont}" FontSize="10" Foreground="#FF111111" />
+                                        </Border>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="26" Height="22" VerticalAlignment="Top"
+                                                Content="&#xE8A5;" FontSize="11" Command="{Binding CopyLogsCommand}" ToolTip="Copy a kubectl logs command"
+                                                Visibility="{Binding HasLogs, Converter={StaticResource BoolToVisibility}}" />
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="26" Height="22" VerticalAlignment="Top"
+                                                Content="&#xE7C3;" FontSize="11" Command="{Binding ViewLogsCommand}" ToolTip="View live logs"
+                                                Visibility="{Binding HasLogs, Converter={StaticResource BoolToVisibility}}" />
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Age}" Style="{StaticResource SecondaryText}" Margin="6,0,4,0" VerticalAlignment="Top" />
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource PrimaryText}" FontSize="12" />
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None" MaxHeight="34" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Button>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsCritical}" Value="True">
+                                        <Setter TargetName="Badge" Property="Background" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Nodes -->
+                    <TextBlock Text="NODES" Style="{StaticResource SecondaryText}" FontSize="10" Margin="2,10,0,4"
+                               Visibility="{Binding Nodes.Count, Converter={StaticResource ZeroToVisible}, ConverterParameter=invert}" />
+                    <ItemsControl ItemsSource="{Binding Nodes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="4,2">
+                                    <Ellipse x:Name="NodeDot" DockPanel.Dock="Left" Width="8" Height="8" Margin="0,0,8,0" Fill="{DynamicResource DangerBrush}" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Version}" Style="{StaticResource SecondaryText}" Margin="8,0,0,0" />
+                                    <TextBlock Style="{StaticResource PrimaryText}" FontSize="12" FontWeight="Normal">
+                                        <Run Text="{Binding Name, Mode=OneWay}" />
+                                        <Run Text="{Binding Roles, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <Run Text="{Binding Conditions, Mode=OneWay}" Foreground="{DynamicResource WarningBrush}" />
+                                    </TextBlock>
+                                </DockPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Ready}" Value="True">
+                                        <Setter TargetName="NodeDot" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Warning events -->
+                    <TextBlock Text="RECENT WARNING EVENTS (30 MIN)" Style="{StaticResource SecondaryText}" FontSize="10" Margin="2,10,0,4"
+                               Visibility="{Binding Events.Count, Converter={StaticResource ZeroToVisible}, ConverterParameter=invert}" />
+                    <ItemsControl ItemsSource="{Binding Events}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4,2,4,4">
+                                    <TextBlock Style="{StaticResource PrimaryText}" FontSize="11.5" FontWeight="Normal">
+                                        <Run Text="{Binding Reason, Mode=OneWay}" Foreground="{DynamicResource WarningBrush}" />
+                                        <Run Text="{Binding Object, Mode=OneWay}" />
+                                        <Run Text="{Binding Count, Mode=OneWay, StringFormat=×{0}}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Message}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" TextTrimming="None" MaxHeight="30" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <TextBlock Text="{Binding Note}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Foreground="{DynamicResource WarningBrush}" Visibility="{Binding Note, Converter={StaticResource NullToCollapsed}}" />
+            <TextBlock Text="{Binding Copied}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,6,0,0"
+                       Visibility="{Binding Copied, Converter={StaticResource NullToCollapsed}}" />
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Quick folders -->
+    <DataTemplate x:Key="QuickFoldersWidget.Popup">
+        <StackPanel Width="360">
+            <TextBlock Text="Quick folders" Style="{StaticResource PopupTitle}" />
+            <TextBlock Text="No places yet. Drag folders from File Explorer onto the widget, or right-click › Configure… to type paths."
+                       Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,4"
+                       Visibility="{Binding Items.Count, Converter={StaticResource ZeroToVisible}}" />
+            <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button x:Name="Row" Style="{StaticResource PopupItemButton}" Command="{Binding OpenCommand}" ToolTip="{Binding FullPath}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                               Foreground="{DynamicResource AccentBrush}" Margin="0,2,10,0" VerticalAlignment="Top" />
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0">
+                                        <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE756;" FontSize="12"
+                                                Command="{Binding TerminalCommand}" ToolTip="Open a terminal here" />
+                                        <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE8C8;" FontSize="12"
+                                                Command="{Binding CopyCommand}" ToolTip="Copy path" />
+                                        <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE711;" FontSize="10"
+                                                Command="{Binding RemoveCommand}" ToolTip="Remove from the list" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource PrimaryText}" FontSize="12" />
+                                        <TextBlock Text="{Binding Path}" Style="{StaticResource SecondaryText}" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                    <Setter TargetName="Row" Property="Opacity" Value="0.5" />
+                                    <Setter TargetName="Row" Property="ToolTip" Value="Not found (deleted, renamed, or the network share is offline)" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding Feedback}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding Feedback, Converter={StaticResource NullToCollapsed}}" />
+            <TextBlock Text="Tip: drag a folder from File Explorer onto the widget to add it." Style="{StaticResource SecondaryText}" FontSize="10.5"
+                       Margin="2,6,0,0" Opacity="0.8" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Script runner -->
+    <DataTemplate x:Key="ScriptRunnerWidget.Popup">
+        <StackPanel Width="380">
+            <TextBlock Text="Scripts" Style="{StaticResource PopupTitle}" />
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,6"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+            <ScrollViewer MaxHeight="460" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Scripts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="8,6" Margin="0,2" CornerRadius="8" Background="{DynamicResource WidgetHoverBrush}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Ellipse x:Name="Dot" DockPanel.Dock="Left" Width="9" Height="9" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                 Fill="{DynamicResource TextSecondaryBrush}" />
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE768;" FontSize="12"
+                                                    Command="{Binding RunCommand}" ToolTip="Run now" />
+                                            <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE71A;" FontSize="12"
+                                                    Command="{Binding StopCommand}" ToolTip="Stop" />
+                                            <Button Style="{StaticResource DockIconButton}" Width="26" Height="24" Content="&#xE8C8;" FontSize="12"
+                                                    Command="{Binding CopyOutputCommand}" ToolTip="Copy full output" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Style="{StaticResource PrimaryText}" FontSize="12">
+                                                <Run Text="{Binding Name, Mode=OneWay}" />
+                                                <Run Text="{Binding Schedule, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10.5" />
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource SecondaryText}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Tail}" FontFamily="Cascadia Mono, Consolas" FontSize="10.5" Margin="17,4,0,0"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" MaxHeight="80"
+                                               Visibility="{Binding Tail, Converter={StaticResource NullToCollapsed}}" />
+                                </StackPanel>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding State}" Value="{x:Static prod:ScriptState.Running}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource AccentBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding State}" Value="{x:Static prod:ScriptState.Succeeded}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding State}" Value="{x:Static prod:ScriptState.Failed}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding State}" Value="{x:Static prod:ScriptState.TimedOut}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding State}" Value="{x:Static prod:ScriptState.Stopped}">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource WarningBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding Feedback}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding Feedback, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- CodeHub / GitLab -->
+    <DataTemplate x:Key="CodeRepoWidget.Popup">
+        <StackPanel Width="420">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding RefreshNowCommand}">
+                    <TextBlock Text="Refresh" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource PopupTitle}" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,6"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+            <ContentControl Content="{Binding Board}" ContentTemplate="{StaticResource CodeBoard.View}" Focusable="False" />
+            <TextBlock Text="{Binding Note}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Foreground="{DynamicResource WarningBrush}" Visibility="{Binding Note, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Bookmarks -->
+    <DataTemplate x:Key="BookmarksWidget.Popup">
+        <StackPanel Width="360">
+            <DockPanel Margin="0,0,0,6">
+                <Button DockPanel.Dock="Left" Style="{StaticResource DockIconButton}" Content="&#xE72B;" FontSize="12" Margin="0,0,6,0"
+                        Command="{Binding UpCommand}" ToolTip="Back" Visibility="{Binding CanGoUp, Converter={StaticResource BoolToVisibility}}" />
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Margin="4,0,0,0"
+                        Command="{Binding OpenAllHereCommand}" ToolTip="Open every link in this folder (and its sub-folders) as tabs"
+                        Visibility="{Binding CanOpenAllHere, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="Open all" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0" Command="{Binding SearchCommand}"
+                        ToolTip="Search all bookmarks (opens a window you can type in)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE721;" FontFamily="{DynamicResource IconFont}" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Text="Search" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </StackPanel>
+                </Button>
+                <TextBlock Text="{Binding Location}" Style="{StaticResource PopupTitle}" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource SecondaryText}" FontSize="12" TextWrapping="Wrap" TextTrimming="None" Margin="2,0,0,6"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToCollapsed}}" />
+            <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding ActivateCommand}" ToolTip="{Binding Url}">
+                                <DockPanel>
+                                    <TextBlock x:Name="Icon" DockPanel.Dock="Left" Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                               Margin="0,1,10,0" VerticalAlignment="Top" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="26" Height="22" Margin="6,0,0,0"
+                                            Content="&#xE8A7;" FontSize="11" Command="{Binding OpenAllCommand}" ToolTip="Open all links in this folder as tabs"
+                                            Visibility="{Binding CanOpenAll, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Style="{StaticResource SecondaryText}" Margin="8,0,0,0" MaxWidth="130" />
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource PrimaryText}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                </DockPanel>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                    <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock Text="{Binding Feedback}" Style="{StaticResource SecondaryText}" FontSize="11" TextWrapping="Wrap" TextTrimming="None" Margin="2,8,0,0"
+                       Visibility="{Binding Feedback, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Top processes by CPU -->
+    <DataTemplate x:Key="CpuWidget.Popup">
+        <StackPanel Width="360">
+            <DockPanel Margin="0,0,0,4">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0"
+                        Command="{Binding Top.OpenTaskManagerCommand}" ToolTip="Open Windows Task Manager">
+                    <TextBlock Text="Task Manager" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="Top processes by CPU" Style="{StaticResource PopupTitle}" />
+            </DockPanel>
+            <TextBlock Text="{Binding Top.Status}" Style="{StaticResource SecondaryText}" FontSize="10.5" Margin="2,0,0,6" />
+            <ItemsControl ItemsSource="{Binding Top.Rows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="2,3" ToolTip="Processor use since the last update, summed over all processes with this name">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="3" />
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Secondary}" Style="{StaticResource SecondaryText}" Width="78" TextAlignment="Right" Margin="8,0,0,0" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Primary}" Style="{StaticResource PrimaryText}" FontSize="12" Width="70" TextAlignment="Right" />
+                                <TextBlock Style="{StaticResource PrimaryText}" FontSize="12" FontWeight="Normal" TextTrimming="CharacterEllipsis">
+                                    <Run Text="{Binding Name, Mode=OneWay}" />
+                                    <Run Text="{Binding Count, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10.5" />
+                                </TextBlock>
+                            </DockPanel>
+                            <Border Grid.Row="1" CornerRadius="1.5" Background="{DynamicResource AccentSoftBrush}" Margin="0,1,0,0" />
+                            <Border Grid.Row="1" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="0,1,0,0" HorizontalAlignment="Stretch"
+                                    RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="{Binding Fraction}" ScaleY="1" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Top processes by memory -->
+    <DataTemplate x:Key="MemoryWidget.Popup">
+        <StackPanel Width="360">
+            <DockPanel Margin="0,0,0,4">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Padding="8,0"
+                        Command="{Binding Top.OpenTaskManagerCommand}" ToolTip="Open Windows Task Manager">
+                    <TextBlock Text="Task Manager" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Button>
+                <TextBlock Text="Top processes by memory" Style="{StaticResource PopupTitle}" />
+            </DockPanel>
+            <TextBlock Text="{Binding Top.Status}" Style="{StaticResource SecondaryText}" FontSize="10.5" Margin="2,0,0,6" />
+            <ItemsControl ItemsSource="{Binding Top.Rows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="2,3" ToolTip="Working set (RAM in use), summed over all processes with this name">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="3" />
+                            </Grid.RowDefinitions>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Secondary}" Style="{StaticResource SecondaryText}" Width="78" TextAlignment="Right" Margin="8,0,0,0" />
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Primary}" Style="{StaticResource PrimaryText}" FontSize="12" Width="70" TextAlignment="Right" />
+                                <TextBlock Style="{StaticResource PrimaryText}" FontSize="12" FontWeight="Normal" TextTrimming="CharacterEllipsis">
+                                    <Run Text="{Binding Name, Mode=OneWay}" />
+                                    <Run Text="{Binding Count, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="10.5" />
+                                </TextBlock>
+                            </DockPanel>
+                            <Border Grid.Row="1" CornerRadius="1.5" Background="{DynamicResource AccentSoftBrush}" Margin="0,1,0,0" />
+                            <Border Grid.Row="1" CornerRadius="1.5" Background="{DynamicResource AccentBrush}" Margin="0,1,0,0" HorizontalAlignment="Stretch"
+                                    RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="{Binding Fraction}" ScaleY="1" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Volume -->
+    <DataTemplate x:Key="VolumeWidget.Popup">
+        <StackPanel Width="280">
+            <TextBlock Text="{Binding DeviceName}" Style="{StaticResource PopupTitle}" />
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Style="{StaticResource DockIconButton}" Width="32" Height="32" Command="{Binding ToggleMuteCommand}"
+                        Content="{Binding Glyph}" FontSize="16" ToolTip="Mute / unmute" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding LevelText}" Style="{StaticResource PrimaryText}" Width="48" TextAlignment="Right" />
+                <Slider Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" Margin="8,0" VerticalAlignment="Center"
+                        IsMoveToPointEnabled="True" Value="{Binding Level, Mode=TwoWay}" />
+            </DockPanel>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Clipboard history -->
+    <DataTemplate x:Key="ClipboardWidget.Popup">
+        <StackPanel Width="340">
+            <DockPanel Margin="0,0,0,6">
+                <Button DockPanel.Dock="Right" Style="{StaticResource DockIconButton}" Width="Auto" Command="{Binding ClearCommand}" ToolTip="Clear history">
+                    <TextBlock Text="Clear" FontFamily="{DynamicResource UiFont}" FontSize="11.5" Margin="8,0" />
+                </Button>
+                <TextBlock Text="Clipboard" Style="{StaticResource PopupTitle}" Margin="2,0,0,0" />
+            </DockPanel>
+            <TextBlock Style="{StaticResource SecondaryText}" FontSize="12" Margin="2,0,0,4" TextWrapping="Wrap" TextTrimming="None"
+                       Visibility="{Binding Items.Count, Converter={StaticResource ZeroToVisible}}"
+                       Text="Nothing yet. History is off unless you enable it (right-click › Clipboard history enabled); entries stay in memory only." />
+            <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource PopupItemButton}" Command="{Binding CopyCommand}" ToolTip="Copy again">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TimeText}" Style="{StaticResource SecondaryText}" Margin="8,0,0,0" />
+                                    <TextBlock Text="{Binding Preview}" Style="{StaticResource PrimaryText}" FontSize="12" FontWeight="Normal" />
+                                </DockPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </StackPanel>
+    </DataTemplate>
+</ResourceDictionary>

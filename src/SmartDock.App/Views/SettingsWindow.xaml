@@ -1,0 +1,258 @@
+<Window x:Class="SmartDock.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:SmartDock.Core;assembly=SmartDock.Core"
+        Title="SmartDock Settings"
+        Width="620" Height="720" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI">
+
+    <Window.Resources>
+        <Style x:Key="Section" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,18,0,8" />
+        </Style>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#22808080" />
+            <Setter Property="Background" Value="#0C808080" />
+        </Style>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,8,28,28">
+
+            <TextBlock Text="Appearance" Style="{StaticResource Section}" />
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <ComboBox DockPanel.Dock="Right" Width="200" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
+                    <TextBlock Text="Theme" Style="{StaticResource Label}" />
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBox DockPanel.Dock="Right" Width="110" Text="{Binding AccentColor, UpdateSourceTrigger=LostFocus}" />
+                        <TextBlock Text="Accent colour" Style="{StaticResource Label}" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding AccentPresets}" Margin="0,10,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="28" Height="28" Margin="0,0,8,0" Padding="0" Cursor="Hand" ToolTip="{Binding}"
+                                        Tag="{Binding}" Click="OnAccentPresetClick" BorderThickness="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border CornerRadius="14" Background="{Binding}" BorderBrush="#40FFFFFF" BorderThickness="1" />
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="56" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="5" Text="Dock size" Style="{StaticResource Label}"
+                               ToolTip="Scales everything on the dock – icons, text and widgets." />
+                    <Slider Grid.Row="5" Grid.Column="1" Minimum="0.6" Maximum="1.5" IsSnapToTickEnabled="True" TickFrequency="0.05" VerticalAlignment="Center"
+                            Value="{Binding DockScale, Delay=150}" />
+                    <TextBlock Grid.Row="5" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding DockScale, StringFormat={}{0:P0}}" />
+
+                    <TextBlock Grid.Row="0" Text="Background opacity" Style="{StaticResource Label}" />
+                    <Slider Grid.Row="0" Grid.Column="1" Minimum="0.3" Maximum="1" SmallChange="0.01" LargeChange="0.1" VerticalAlignment="Center"
+                            Value="{Binding BackgroundOpacity, Delay=120}" />
+                    <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding BackgroundOpacity, StringFormat={}{0:P0}}" />
+
+                    <TextBlock Grid.Row="1" Text="Corner radius" Style="{StaticResource Label}" />
+                    <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="26" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"
+                            Value="{Binding CornerRadius, Delay=120}" />
+                    <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding CornerRadius, StringFormat={}{0:0} px}" />
+
+                    <TextBlock Grid.Row="2" Text="Widget spacing" Style="{StaticResource Label}" />
+                    <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="24" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"
+                            Value="{Binding WidgetSpacing, Delay=120}" />
+                    <TextBlock Grid.Row="2" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding WidgetSpacing, StringFormat={}{0:0} px}" />
+
+                    <TextBlock Grid.Row="3" Text="Dock height" Style="{StaticResource Label}" />
+                    <Slider Grid.Row="3" Grid.Column="1" Minimum="40" Maximum="80" IsSnapToTickEnabled="True" TickFrequency="2" VerticalAlignment="Center"
+                            Value="{Binding DockHeight, Delay=150}" />
+                    <TextBlock Grid.Row="3" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding DockHeight, StringFormat={}{0:0} px}" />
+
+                    <TextBlock Grid.Row="4" Text="Shadow intensity" Style="{StaticResource Label}" />
+                    <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.2" VerticalAlignment="Center"
+                            Value="{Binding ShadowIntensity, Delay=120}" />
+                    <TextBlock Grid.Row="4" Grid.Column="2" Style="{StaticResource Label}" HorizontalAlignment="Right"
+                               Text="{Binding ShadowIntensity, StringFormat={}{0:P0}}" />
+                </Grid>
+            </Border>
+            <Button Content="Reset appearance" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="12,5" Command="{Binding ResetAppearanceCommand}" />
+
+            <TextBlock Text="Dock behaviour" Style="{StaticResource Section}" />
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Taskbar mode" Style="{StaticResource Label}" FontWeight="SemiBold" />
+                    <ComboBox Margin="0,8,0,0" ItemsSource="{Binding Modes}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Mode}" />
+                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" FontSize="12" Opacity="0.75"
+                               Text="Replacement mode hides the Windows taskbar only while SmartDock runs. It is restored on exit, after a crash (watchdog), from the tray menu, or by running “SmartDock.exe --restore-taskbar”." />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <ComboBox DockPanel.Dock="Right" Width="200" ItemsSource="{Binding Edges}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Edge}" />
+                    <TextBlock Text="Screen edge" Style="{StaticResource Label}" />
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Margin="8,0,0,0" Padding="8,4"
+                            ToolTip="Refresh monitor list" Command="{Binding RefreshMonitorsCommand}" />
+                    <ComboBox DockPanel.Dock="Right" Width="260" ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding MonitorDeviceName}" />
+                    <TextBlock Text="Monitor" Style="{StaticResource Label}" />
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <ComboBox DockPanel.Dock="Right" Width="260" ItemsSource="{Binding FullscreenOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Fullscreen}" />
+                    <TextBlock Text="Fullscreen apps" Style="{StaticResource Label}" />
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <CheckBox Content="Auto-hide the dock (reveal at the screen edge)" IsChecked="{Binding AutoHide}" />
+                    <CheckBox Content="Span the full width of the screen (like the Windows taskbar)" IsChecked="{Binding FullWidth}" Margin="0,10,0,0" />
+                    <CheckBox Content="When the dock is full, continue apps and widgets on a second row" IsChecked="{Binding WrapWhenFull}" Margin="0,10,0,0" />
+                    <CheckBox Content="Stick to the screen edge (maximised windows stop at the dock)" IsChecked="{Binding ReserveSpace}" Margin="0,10,0,0"
+                              IsEnabled="{Binding AutoHide, Converter={StaticResource InverseBool}}" />
+                    <TextBlock Margin="28,2,0,0" FontSize="11.5" Opacity="0.7" TextWrapping="Wrap"
+                               Text="Reserves the dock's height like the Windows taskbar does. Not used while auto-hide is on. Removed automatically when SmartDock exits." />
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="56" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Gap to screen edge" VerticalAlignment="Center"
+                                   ToolTip="Space between the dock and the bottom (or top) of the screen – or the Windows taskbar in companion mode." />
+                        <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="32" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"
+                                Margin="0,4" Value="{Binding EdgeMargin, Delay=150}" />
+                        <TextBlock Grid.Row="0" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding EdgeMargin, StringFormat={}{0:0} px}" />
+
+                        <TextBlock Grid.Row="1" Text="Gap to windows" VerticalAlignment="Center"
+                                   ToolTip="Space between the dock and maximised windows. Applies when 'Stick to the screen edge' is on." />
+                        <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="32" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"
+                                Margin="0,4" Value="{Binding WindowGap, Delay=150}" IsEnabled="{Binding ReserveSpace}" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Text="{Binding WindowGap, StringFormat={}{0:0} px}" />
+                    </Grid>
+                    <CheckBox Content="Blink app icons that need attention (e.g. new messages)" IsChecked="{Binding ShowAttention}" Margin="0,12,0,0" />
+                    <CheckBox Content="Show window previews when hovering an app icon" IsChecked="{Binding ShowWindowPreviews}" Margin="0,10,0,0" />
+                    <CheckBox Content="Start SmartDock when I sign in to Windows" IsChecked="{Binding StartWithWindows}" Margin="0,10,0,0" />
+                    <TextBlock Margin="0,12,0,0" Opacity="0.7">
+                        <Run Text="Version" /> <Run Text="{x:Static core:AppInfo.DisplayVersion}" />
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Widgets" Style="{StaticResource Section}" />
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Open widget manager" Padding="12,5" Click="OnOpenWidgetManager" />
+                    <TextBlock Text="Add, remove and reorder widgets. You can also drag widgets inside the dock." Style="{StaticResource Label}" TextWrapping="Wrap" Margin="0,0,12,0" />
+                </DockPanel>
+            </Border>
+
+            <TextBlock Text="Updates" Style="{StaticResource Section}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Release location (folder containing latest.json and the MSI)" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                    <TextBox Text="{Binding UpdateFeedLocation}" FontFamily="Cascadia Mono, Consolas" />
+                    <TextBlock FontSize="11.5" Opacity="0.65" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Text="Examples: ssh://deploy@build01.corp/srv/smartdock · https://build01.corp/smartdock/ · \\fileserver\tools\smartdock. Leave empty to turn updates off." />
+
+                    <TextBlock Text="SSH key (optional, ssh:// only)" Style="{StaticResource Label}" Margin="0,12,0,6" />
+                    <TextBox Text="{Binding UpdateSshKeyPath}" FontFamily="Cascadia Mono, Consolas" />
+                    <TextBlock FontSize="11.5" Opacity="0.65" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Text="Empty = your normal OpenSSH keys or ssh-agent. The host must already be trusted (connect once with ssh user@host)." />
+
+                    <CheckBox Content="Check for updates automatically (shortly after start-up, after sleep/unlock, and regularly)" IsChecked="{Binding UpdateCheckAutomatically}" Margin="0,12,0,0" />
+                    <DockPanel Margin="28,6,0,0" IsEnabled="{Binding UpdateCheckAutomatically}">
+                        <TextBlock Text="Every" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock DockPanel.Dock="Right" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="10,0,0,0" MinWidth="70"
+                                   Text="{Binding UpdateCheckIntervalMinutes, StringFormat={}{0:0} min}" />
+                        <Slider Minimum="15" Maximum="720" TickFrequency="15" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                Value="{Binding UpdateCheckIntervalMinutes, Delay=200}" />
+                    </DockPanel>
+                    <CheckBox Content="Allow unencrypted http:// (trusted network only)" IsChecked="{Binding UpdateAllowHttp}" Margin="0,8,0,0" />
+
+                    <DockPanel Margin="0,14,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="Check now" Padding="12,5" Command="{Binding Updates.CheckNowCommand}" />
+                            <Button Padding="12,5" Margin="8,0,0,0" Command="{Binding Updates.InstallCommand}"
+                                    Visibility="{Binding Updates.IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock>
+                                    <Run Text="Update to v" /><Run Text="{Binding Updates.AvailableVersion, Mode=OneWay}" />
+                                </TextBlock>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Updates.StatusText}" Style="{StaticResource Label}" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding Updates.ReleaseNotes}" FontSize="11.5" Opacity="0.75" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding Updates.IsUpdateAvailable, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Margin="0,18,0,0" FontSize="12" Opacity="0.6" TextWrapping="Wrap">
+                <Run Text="Settings are saved automatically to" />
+                <Run x:Name="PathRun" />
+            </TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

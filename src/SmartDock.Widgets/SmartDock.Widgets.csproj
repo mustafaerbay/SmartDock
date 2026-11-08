@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>SmartDock.Widgets</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="SmartDock.Widgets.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Official Kubernetes client (kubeconfig incl. certs, tokens, exec/OIDC plugins). -->
+    <PackageReference Include="KubernetesClient" Version="19.0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SmartDock.Core\SmartDock.Core.csproj" />
+  </ItemGroup>
+</Project>

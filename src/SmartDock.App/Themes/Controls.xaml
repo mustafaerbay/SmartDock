@@ -1,0 +1,234 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:c="clr-namespace:SmartDock.App.Controls"
+                    xmlns:conv="clr-namespace:SmartDock.App.Converters"
+                    xmlns:core="clr-namespace:SmartDock.Core.Widgets;assembly=SmartDock.Core">
+
+    <conv:BytesToImageConverter x:Key="BytesToImage" />
+    <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    <conv:NullToCollapsedConverter x:Key="NullToCollapsed" />
+    <conv:FractionToPercentConverter x:Key="FractionToPercent" />
+    <conv:LoadToBrushConverter x:Key="LoadToBrush" />
+    <conv:ZeroToVisibilityConverter x:Key="ZeroToVisible" />
+    <conv:InverseBoolConverter x:Key="InverseBool" />
+
+    <!-- Text -->
+    <Style x:Key="PrimaryText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="SecondaryText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="IconText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource IconFont}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Small round icon button used inside widgets and the system area. -->
+    <Style x:Key="DockIconButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource IconFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Background="Transparent">
+                        <Border x:Name="Bg" CornerRadius="7" Background="{DynamicResource WidgetHoverBrush}" Opacity="0" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.6" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Full-width row button used in widget popups (agenda items, GitHub items, clipboard entries). -->
+    <Style x:Key="PopupItemButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="8,6" Margin="0,1">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WidgetHoverBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PopupTitle" TargetType="TextBlock" BasedOn="{StaticResource PrimaryText}">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="2,0,0,8" />
+    </Style>
+
+    <!-- Card chrome around every widget. -->
+    <Style TargetType="c:WidgetCard">
+        <Setter Property="Margin" Value="{DynamicResource WidgetMargin}" />
+        <Setter Property="Width" Value="{Binding Width, TargetNullValue={x:Static sys:Double.NaN}}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="c:WidgetCard">
+                    <Grid>
+                        <Border x:Name="Card"
+                                Height="{DynamicResource WidgetHeight}"
+                                MinWidth="{DynamicResource WidgetHeight}"
+                                CornerRadius="{DynamicResource WidgetCornerRadius}"
+                                Background="{DynamicResource WidgetBackgroundBrush}"
+                                BorderBrush="{DynamicResource WidgetBorderBrush}"
+                                BorderThickness="1"
+                                ToolTipService.InitialShowDelay="600"
+                                ToolTip="{Binding StatusMessage}">
+                            <Grid>
+                                <Border x:Name="Hover" CornerRadius="{DynamicResource WidgetCornerRadius}" Background="{DynamicResource WidgetHoverBrush}" Opacity="0" />
+                                <ContentPresenter x:Name="Presenter" Margin="10,0" VerticalAlignment="Center" />
+                                <TextBlock x:Name="Badge" Style="{StaticResource IconText}" Text="&#xE7BA;" FontSize="10"
+                                           Foreground="{DynamicResource WarningBrush}"
+                                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,4,0"
+                                           Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                        <Border x:Name="InsertBefore" Width="3" CornerRadius="1.5" Margin="-4,4,0,4" HorizontalAlignment="Left"
+                                Background="{DynamicResource AccentBrush}" Visibility="Collapsed" />
+                        <Border x:Name="InsertAfter" Width="3" CornerRadius="1.5" Margin="0,4,-4,4" HorizontalAlignment="Right"
+                                Background="{DynamicResource AccentBrush}" Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="DropPosition" Value="Before">
+                            <Setter TargetName="InsertBefore" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="DropPosition" Value="After">
+                            <Setter TargetName="InsertAfter" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static core:WidgetState.Loading}">
+                            <Setter TargetName="Presenter" Property="Opacity" Value="0.45" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static core:WidgetState.Unavailable}">
+                            <Setter TargetName="Presenter" Property="Opacity" Value="0.6" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding HasProblem}" Value="True">
+                            <Setter TargetName="Presenter" Property="Opacity" Value="0.6" />
+                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static core:WidgetState.Error}">
+                            <Setter TargetName="Badge" Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Rounded, theme-aware context menus. -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource UiFont}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{DynamicResource PopupBackgroundBrush}"
+                            BorderBrush="{DynamicResource DockBorderBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="4">
+                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Bd" CornerRadius="5" Padding="8,5" Background="Transparent">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="{DynamicResource IconFont}" FontSize="11"
+                                       Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Visibility="Hidden" />
+                            <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Separator">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="6,4" Background="{DynamicResource DividerBrush}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Per-user MSI: installs to %LOCALAPPDATA%\Programs\SmartDock without administrator rights (no UAC prompt),
+  adds Start-menu shortcuts and an uninstall entry in Settings › Apps, upgrades in place, and closes a
+  running SmartDock cleanly first (SmartDock.exe -shutdown restores the taskbar). Settings and logs in
+  %LOCALAPPDATA%\SmartDock are user data and are kept on uninstall.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="SmartDock"
+           Manufacturer="SmartDock"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="AD302707-EAB1-42F8-A163-4A50F374EE62"
+           Scope="perUser"
+           Language="1033"
+           Compressed="yes">
+
+    <SummaryInformation Description="SmartDock - smart dock and taskbar for Windows" />
+
+    <!-- Newer versions replace older ones; installing an older version over a newer one is refused. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of SmartDock is already installed." AllowSameVersionUpgrades="yes" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Settings › Apps entry -->
+    <Icon Id="SmartDockIcon" SourceFile="$(var.RepoRoot)src\SmartDock.App\Resources\smartdock.ico" />
+    <Property Id="ARPPRODUCTICON" Value="SmartDockIcon" />
+    <!-- ARPNOMODIFY is already set by WixUI_Minimal (defining it here too causes WIX0091). -->
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <!-- Folders: %LOCALAPPDATA%\Programs\SmartDock and the user's Start menu -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="UserProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="SmartDock" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="SmartDock" Level="1">
+      <!-- Per-user components use an HKCU value as key path (Windows Installer rule for user-profile files).
+           A component with a file AND a registry key path can't get an auto-generated GUID (WIX0230), so the
+           GUIDs are fixed here. Never change them: Windows tracks the installed files by these IDs. -->
+      <Component Id="SmartDockExecutable" Directory="INSTALLFOLDER" Guid="E4EEE432-D32E-4072-ABE7-01EC0F7EEA9C">
+        <File Id="SmartDockExe" Source="$(var.AppPublishDir)SmartDock.exe" />
+        <RegistryValue Root="HKCU" Key="Software\SmartDock\Installer" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+        <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+        <RemoveFolder Id="RemoveUserProgramsFolder" Directory="UserProgramsFolder" On="uninstall" />
+      </Component>
+
+      <Component Id="StartMenuShortcuts" Directory="ProgramMenuFolder" Guid="22FB3DB9-A6F2-45F9-8C00-282459A90BC9">
+        <Shortcut Id="SmartDockShortcut"
+                  Name="SmartDock"
+                  Description="Smart dock and taskbar for Windows"
+                  Target="[#SmartDockExe]"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="SmartDockIcon" />
+        <!-- Rescue: brings the Windows taskbar back if it ever stays hidden. -->
+        <Shortcut Id="RestoreTaskbarShortcut"
+                  Name="SmartDock - Restore Windows taskbar"
+                  Description="Shows the Windows taskbar again if SmartDock left it hidden"
+                  Target="[#SmartDockExe]"
+                  Arguments="--restore-taskbar"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="SmartDockIcon" />
+        <RegistryValue Root="HKCU" Key="Software\SmartDock\Installer" Name="StartMenuShortcuts" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+
+      <!-- "Start with Windows": same value SmartDock's own setting writes, so the in-app toggle keeps working.
+           Removed automatically on uninstall. -->
+      <Component Id="AutoStart" Directory="INSTALLFOLDER" Condition="AUTOSTART = 1" Guid="699A6B55-B052-4D85-8879-CFDB012275D4">
+        <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="SmartDock" Type="string"
+                       Value="&quot;[INSTALLFOLDER]SmartDock.exe&quot; --autostart" KeyPath="yes" />
+      </Component>
+    </Feature>
+
+    <!-- msiexec /i SmartDock-Setup.msi AUTOSTART=0  installs without "Start with Windows". -->
+    <Property Id="AUTOSTART" Value="1" Secure="yes" />
+
+    <!-- Close a running SmartDock cleanly before files are replaced or removed (it restores the Windows taskbar).
+         Runs the already-installed exe; harmless (ignored) on a first install. -->
+    <CustomAction Id="ShutdownRunningSmartDock"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]SmartDock.exe&quot; --shutdown"
+                  Execute="immediate"
+                  Return="ignore" />
+    <!-- In-app updates run "msiexec /i … /passive RELAUNCH=1": start the new version when the upgrade is done
+         (there is no Finish page in passive mode). -->
+    <Property Id="RELAUNCH" Secure="yes" />
+    <CustomAction Id="RelaunchSmartDock" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]SmartDock.exe&quot;" Return="asyncNoWait" />
+
+    <InstallExecuteSequence>
+      <Custom Action="ShutdownRunningSmartDock" Before="InstallValidate" Condition="Installed OR WIX_UPGRADE_DETECTED" />
+      <Custom Action="RelaunchSmartDock" After="InstallFinalize" Condition="RELAUNCH = 1 AND NOT (REMOVE = &quot;ALL&quot;)" />
+    </InstallExecuteSequence>
+
+    <!-- Wizard: Welcome + licence note → Install → Finish with "Launch SmartDock". -->
+    <ui:WixUI Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.RepoRoot)installer\License.rtf" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch SmartDock" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="LaunchSmartDock" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]SmartDock.exe&quot;" Return="asyncNoWait" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSmartDock"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+  </Package>
+</Wix>

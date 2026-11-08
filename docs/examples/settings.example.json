@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "appearance": {
+    "theme": "Midnight",
+    "backgroundOpacity": 0.92,
+    "cornerRadius": 12,
+    "widgetSpacing": 5,
+    "dockHeight": 52,
+    "widgetHeight": 40,
+    "horizontalPadding": 8,
+    "verticalPadding": 6,
+    "accentColor": "#7C5CFF",
+    "shadowIntensity": 0.5
+  },
+  "behavior": {
+    "edge": "Bottom",
+    "autoHide": false,
+    "mode": "Companion",
+    "startWithWindows": false,
+    "fullscreen": "Hide",
+    "monitorDeviceName": null,
+    "edgeMargin": 8
+  }
+}
